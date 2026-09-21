@@ -1,0 +1,18 @@
+# Docker file inizializing postgres in the docker container on port 5432 with specific credentials which are needed for the DB URL string
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nestcord
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nestcord
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+volumes:
+  postgres_data:
