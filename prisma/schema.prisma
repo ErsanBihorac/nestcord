@@ -13,8 +13,17 @@ datasource db {
 }
 
 model User {
-  id     String  @id @default(uuid())
-  name   String
-  email  String  @unique
-  online Boolean @default(false)
+  id                          String    @id @default(uuid())
+  name                        String
+  email                       String    @unique
+  online                      Boolean   @default(false)
+  passwordHash                String?
+  googleId                    String?   @unique
+  githubId                    String?   @unique
+  avatarUrl                   String?
+  refreshTokenHash            String?
+  passwordResetTokenHash      String?
+  passwordResetTokenExpiresAt DateTime?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @default(now())
 }

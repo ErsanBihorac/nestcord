@@ -7,5 +7,6 @@ import { PrismaService } from '../prisma/prisma.service.js';
   imports: [],
   controllers: [UserController], // Controller muss im controllers bereitgestellt werden
   providers: [UserService, PrismaService], // Service muss immer im providers bereitgestellt werden
+  exports: [UserModule],
 })
 export class UserModule {}
