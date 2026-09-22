@@ -147,17 +147,12 @@ export class UserService {
     return users;
   }
 
-  async getUserById(id: string): Promise<UserDto> {
+  async getUserById(id: string): Promise<User | null> {
     const user = await this.prismaService.user.findUnique({
       where: {
         id: id,
       },
-      select: safeUserSelect,
     });
-
-    if (!user) {
-      throw new NotFoundException(`User with id ${id} was not found`);
-    }
 
     return user;
   }

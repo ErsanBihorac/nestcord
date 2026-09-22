@@ -7,17 +7,13 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { JwtSignOptions } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
-import { SafeUser } from '../user/types/safe-user.type.js';
 import { UserService } from '../user/user.service.js';
 import type { JwtPayload } from './types/jwt-payload.type.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { LoginDto } from './dto/login.dto.js';
-
-export type AuthResult = {
-  user: SafeUser;
-  accessToken: string;
-  refreshToken: string;
-};
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { AuthResult } from './types/auth-result.type.js';
+import { SafeUser } from '../user/types/safe-user.type.js';
 
 @Injectable()
 export class AuthService {
@@ -121,5 +117,62 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async refresh(dto: RefreshTokenDto): Promise<AuthResult> {
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(
+        dto.refreshToken,
+        {
+          secret: this.configService.getOrThrow<string>('REFRESH_TOKEN_SECRET'),
+        },
+      );
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const user = await this.userService.getUserById(payload.sub);
+    if (!user || !user.refreshTokenHash) {
+      throw new UnauthorizedException('Invalid or expires refresh token');
+    }
+
+    const isRefreshTokenValid = await argon2.verify(
+      user.refreshTokenHash,
+      dto.refreshToken,
+    );
+
+    if (!isRefreshTokenValid) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    const newPayload: JwtPayload = { sub: user.id, email: user.email };
+    const { accessToken, refreshToken } = await this.issueTokens(newPayload);
+
+    const refreshTokenHash = await argon2.hash(refreshToken);
+    await this.userService.updateRefreshTokenHash(user.id, refreshTokenHash);
+
+    return {
+      user: this.userService.toSafeUser(user),
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async logout(userId: string): Promise<{ success: true }> {
+    await this.userService.clearRefreshTokenHash(userId);
+    return {
+      success: true,
+    };
+  }
+
+  async getUserProfile(userId: string): Promise<SafeUser> {
+    const user = await this.userService.getUserById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User no longer exists');
+    }
+
+    return this.userService.toSafeUser(user);
   }
 }
