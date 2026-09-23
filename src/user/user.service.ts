@@ -137,6 +137,18 @@ export class UserService {
     });
   }
 
+  async findByPasswordResetTokenHash(
+    passwordResetTokenHash: string,
+  ): Promise<User | undefined> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        passwordResetTokenHash,
+      },
+    });
+
+    return user ?? undefined;
+  }
+
   async getUsers(): Promise<SafeUser[]> {
     const users = await this.prismaService.user.findMany({
       select: safeUserSelect,

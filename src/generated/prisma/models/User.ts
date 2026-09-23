@@ -269,6 +269,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   email?: string
   googleId?: string
   githubId?: string
+  refreshTokenHash?: string
+  passwordResetTokenHash?: string
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
@@ -276,12 +278,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   online?: Prisma.BoolFilter<"User"> | boolean
   passwordHash?: Prisma.StringNullableFilter<"User"> | string | null
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
-  refreshTokenHash?: Prisma.StringNullableFilter<"User"> | string | null
-  passwordResetTokenHash?: Prisma.StringNullableFilter<"User"> | string | null
   passwordResetTokenExpiresAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-}, "id" | "email" | "googleId" | "githubId">
+}, "id" | "email" | "googleId" | "githubId" | "refreshTokenHash" | "passwordResetTokenHash">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder

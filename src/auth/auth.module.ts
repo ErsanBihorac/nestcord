@@ -6,10 +6,21 @@ import { AuthService } from './auth.service.js';
 import { UserService } from '../user/user.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { AccessTokenGuard } from './guards/access-token.guard.js';
+import { GoogleAuthService } from './google-auth.service.js';
+import { GithubAuthService } from './github-auth.service.js';
+import { MailService } from './mail.service.js';
 
 @Module({
   imports: [UserModule, JwtModule.register({})],
   controllers: [AuthController],
-  providers: [AuthService, UserService, PrismaService, AccessTokenGuard],
+  providers: [
+    AuthService,
+    UserService,
+    PrismaService,
+    AccessTokenGuard,
+    GoogleAuthService,
+    GithubAuthService,
+    MailService,
+  ],
 })
 export class AuthModule {}

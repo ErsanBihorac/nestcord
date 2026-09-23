@@ -21,8 +21,8 @@ model User {
   googleId                    String?   @unique
   githubId                    String?   @unique
   avatarUrl                   String?
-  refreshTokenHash            String?
-  passwordResetTokenHash      String?
+  refreshTokenHash            String?   @unique
+  passwordResetTokenHash      String?   @unique
   passwordResetTokenExpiresAt DateTime?
   createdAt                   DateTime  @default(now())
   updatedAt                   DateTime  @default(now())

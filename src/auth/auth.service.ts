@@ -14,6 +14,10 @@ import type { LoginDto } from './dto/login.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { AuthResult } from './types/auth-result.type.js';
 import { SafeUser } from '../user/types/safe-user.type.js';
+import { MailService } from './mail.service.js';
+import { randomBytes, createHash } from 'node:crypto';
+import type { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import type { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +25,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   private normalizeEmail(email: string): string {
@@ -174,5 +179,106 @@ export class AuthService {
     }
 
     return this.userService.toSafeUser(user);
+  }
+
+  async loginWithOAuthProfile(profile: {
+    email: string;
+    name: string;
+    avatarUrl?: string;
+    googleId?: string;
+    githubId?: string;
+  }): Promise<AuthResult> {
+    const email = this.normalizeEmail(profile.email);
+
+    let user = profile.googleId
+      ? await this.userService.findByGoogleId(profile.googleId)
+      : undefined;
+
+    if (!user && profile.githubId) {
+      user = await this.userService.findByGithubId(profile.githubId);
+    }
+
+    if (!user) {
+      let unsafeUser = await this.userService.getUserByEmail(email);
+      if (unsafeUser) user = this.userService.toSafeUser(unsafeUser);
+    }
+
+    if (!user) {
+      user = await this.userService.createOAuthUser({
+        name: profile.name,
+        email,
+        avatarUrl: profile.avatarUrl,
+        googleId: profile.googleId,
+        githubId: profile.githubId,
+      });
+    } else {
+      if (profile.googleId && !user.googleId) {
+        await this.userService.linkGoogleId(user.id, profile.googleId);
+      }
+      if (profile.githubId && !user.githubId) {
+        await this.userService.linkGithubId(user.id, profile.githubId);
+      }
+    }
+
+    const payload: JwtPayload = { sub: user.id, email: user.email };
+    const { accessToken, refreshToken } = await this.issueTokens(payload);
+
+    const refreshTokenHash = await argon2.hash(refreshToken);
+    await this.userService.updateRefreshTokenHash(user.id, refreshTokenHash);
+
+    return {
+      user: user,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  private hashResetToken(rawToken: string): string {
+    return createHash('sha256').update(rawToken).digest('hex');
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ success: true }> {
+    const email = this.normalizeEmail(dto.email);
+    const user = await this.userService.getUserByEmail(email);
+    if (user) {
+      const rawToken = randomBytes(32).toString('hex');
+      const tokenHash = this.hashResetToken(rawToken);
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await this.userService.setResetPasswordToken(
+        user.id,
+        tokenHash,
+        expiresAt,
+      );
+
+      const resetBaseUrl =
+        this.configService.getOrThrow<string>('PASSWORD_RESET_URL');
+
+      const resetUrl = `${resetBaseUrl}?token=${rawToken}`;
+
+      await this.mailService.sendPasswordResetEmail(user.email, resetUrl);
+    }
+
+    return {
+      success: true,
+    };
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<{ success: true }> {
+    const tokenHash = this.hashResetToken(dto.token);
+
+    const user = await this.userService.findByPasswordResetTokenHash(tokenHash);
+
+    if (
+      !user ||
+      !user.passwordResetTokenExpiresAt ||
+      user.passwordResetTokenExpiresAt.getTime() < Date.now()
+    ) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    await this.userService.resetPassword(user.id, passwordHash);
+    return { success: true };
   }
 }
