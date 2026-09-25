@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateMessageDto } from './dto/create-message.dto.js';
 import { ConversationsService } from '../conversations/conversations.service.js';
 import { Message } from './types/message.type.js';
+import { CreateGroupMessageDto } from './dto/create-group-message.dto.js';
 
 @Injectable()
 export class MessagesService {
@@ -11,7 +12,7 @@ export class MessagesService {
     private readonly conversationsService: ConversationsService,
   ) {}
 
-  async createMessage(dto: CreateMessageDto): Promise<Message> {
+  async createDirectMessage(dto: CreateMessageDto): Promise<Message> {
     const conversation =
       await this.conversationsService.findOrCreateConversation({
         authorId: dto.authorId,
@@ -26,47 +27,64 @@ export class MessagesService {
       },
     });
 
-    // this.eventsGateway.sendMessage(createdMessage);
     return createdMessage;
   }
 
-  async getAuthorMessageId(messageId: string): Promise<Message> {
-    // 1. Socket connection => receive jwt of user (author)
-    const authorId = '';
+  async createGroupMessage(dto: CreateGroupMessageDto): Promise<Message> {
+    const conversation =
+      await this.conversationsService.findOrCreateGroupConversation({
+        authorId: dto.authorId,
+        participantId: dto.participantId,
+      });
 
-    const message = await this.prismaService.message.findUnique({
-      where: {
-        id: messageId,
-        authorId: authorId,
+    const createdMessage = await this.prismaService.message.create({
+      data: {
+        authorId: dto.authorId,
+        message: dto.message,
+        conversationId: conversation.id,
       },
     });
 
-    if (!message) {
-      throw new Error(`Message with id ${messageId} was not found`);
-    }
-
-    return message;
+    return createdMessage;
   }
 
-  async deleteAuthorMessageById(
-    messageId: string,
-  ): Promise<{ success: boolean }> {
-    // 1. Socket connection => receive jwt of user (author)
-    const authorId = '';
+  // async getAuthorMessageId(messageId: string): Promise<Message> {
+  //   // 1. Socket connection => receive jwt of user (author)
+  //   const authorId = '';
 
-    const deleted = await this.prismaService.message.delete({
-      where: {
-        id: messageId,
-        authorId: authorId,
-      },
-    });
+  //   const message = await this.prismaService.message.findUnique({
+  //     where: {
+  //       id: messageId,
+  //       authorId: authorId,
+  //     },
+  //   });
 
-    if (!deleted) {
-      throw new Error(`Deleting message with id ${messageId} failed`);
-    }
+  //   if (!message) {
+  //     throw new Error(`Message with id ${messageId} was not found`);
+  //   }
 
-    return {
-      success: true,
-    };
-  }
+  //   return message;
+  // }
+
+  // async deleteAuthorMessageById(
+  //   messageId: string,
+  // ): Promise<{ success: boolean }> {
+  //   // 1. Socket connection => receive jwt of user (author)
+  //   const authorId = '';
+
+  //   const deleted = await this.prismaService.message.delete({
+  //     where: {
+  //       id: messageId,
+  //       authorId: authorId,
+  //     },
+  //   });
+
+  //   if (!deleted) {
+  //     throw new Error(`Deleting message with id ${messageId} failed`);
+  //   }
+
+  //   return {
+  //     success: true,
+  //   };
+  // }
 }
