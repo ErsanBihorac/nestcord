@@ -3,6 +3,7 @@ import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
+import { EventsGateway } from './events/events.gateway.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,7 @@ async function bootstrap() {
     origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
   });
+
   const port = configService.get<number>('PORT') ?? 3000;
   await app.listen(port);
 }

@@ -13,17 +13,39 @@ datasource db {
 }
 
 model User {
-  id                          String    @id @default(uuid())
+  id                          String         @id @default(uuid())
   name                        String
-  email                       String    @unique
-  online                      Boolean   @default(false)
+  email                       String         @unique
+  online                      Boolean        @default(false)
   passwordHash                String?
-  googleId                    String?   @unique
-  githubId                    String?   @unique
+  googleId                    String?        @unique
+  githubId                    String?        @unique
   avatarUrl                   String?
-  refreshTokenHash            String?   @unique
-  passwordResetTokenHash      String?   @unique
+  refreshTokenHash            String?        @unique
+  passwordResetTokenHash      String?        @unique
   passwordResetTokenExpiresAt DateTime?
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @default(now())
+  createdAt                   DateTime       @default(now())
+  updatedAt                   DateTime       @default(now())
+  conversations               Conversation[]
+  messages                    Message[]      @relation("MessageAuthor")
+}
+
+model Conversation {
+  id           String    @id @default(uuid())
+  messages     Message[]
+  participants User[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  message        String
+  authorId       String
+  conversationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+
+  author       User         @relation("MessageAuthor", fields: [authorId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
 }

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { UserModule } from './user/user.module.js';
-import { ChatModule } from './chat/chat.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
+import { EventsModule } from './events/events.module.js';
+import { MessagesModule } from './messages/messages.module.js';
+import { ConversationsModule } from './conversations/conversations.module.js';
 
 @Module({
   imports: [
@@ -11,8 +13,10 @@ import { AuthModule } from './auth/auth.module.js';
       envFilePath: '.env',
     }),
     UserModule,
-    ChatModule,
     AuthModule,
+    EventsModule,
+    MessagesModule,
+    ConversationsModule,
   ],
   controllers: [],
   providers: [],

@@ -9,6 +9,7 @@ import { AccessTokenGuard } from './guards/access-token.guard.js';
 import { GoogleAuthService } from './google-auth.service.js';
 import { GithubAuthService } from './github-auth.service.js';
 import { MailService } from './mail.service.js';
+import { WsJwtGuard } from './guards/ws-jwt.guard.js';
 
 @Module({
   imports: [UserModule, JwtModule.register({})],
@@ -21,6 +22,8 @@ import { MailService } from './mail.service.js';
     GoogleAuthService,
     GithubAuthService,
     MailService,
+    WsJwtGuard,
   ],
+  exports: [WsJwtGuard],
 })
 export class AuthModule {}
