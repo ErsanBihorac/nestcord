@@ -11,6 +11,8 @@ export type GoogleProfile = {
 
 type GoogleTokenResponse = {
   access_token?: string;
+  error?: string;
+  error_description?: string;
 };
 
 type GoogleUserInfoResponse = {
@@ -58,7 +60,7 @@ export class GoogleAuthService {
 
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
         client_id: clientId,
@@ -68,11 +70,13 @@ export class GoogleAuthService {
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to exchange Google authorization code');
-    }
-
     const data = (await response.json()) as GoogleTokenResponse;
+
+    if (!response.ok) {
+      throw new Error(
+        `Google token exchange failed (${response.status}): ${data.error ?? 'unknown_error'}${data.error_description ? ` - ${data.error_description}` : ''}`,
+      );
+    }
 
     if (!data.access_token) {
       throw new Error('Google token response missing access_token');

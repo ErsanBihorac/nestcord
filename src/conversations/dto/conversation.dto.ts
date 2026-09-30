@@ -1,5 +1,5 @@
-import { Message } from 'src/messages/types/message.type.js';
-import { SafeUser } from 'src/user/types/safe-user.type.js';
+import { Message } from '../../messages/types/message.type.js';
+import { SafeUser } from '../../user/types/safe-user.type.js';
 
 export class ConversationDto {
   id!: string;

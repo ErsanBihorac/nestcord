@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
   Query,
   Req,
@@ -18,7 +19,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { AccessTokenGuard } from './guards/access-token.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 import type { JwtPayload } from './types/jwt-payload.type.js';
-import { SafeUser } from 'src/user/types/safe-user.type.js';
+import { SafeUser } from '../user/types/safe-user.type.js';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
@@ -31,6 +32,8 @@ const GITHUB_STATE_COOKIE = 'github_oauth_state';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -46,8 +49,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto): Promise<AuthResult> {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SafeUser> {
+    const result = await this.authService.login(dto);
+    this.setAuthCookies(res, result.accessToken, result.refreshToken);
+    return result.user;
   }
 
   @Post('refresh')
@@ -117,8 +125,11 @@ export class AuthController {
       });
 
       this.setAuthCookies(res, result.accessToken, result.refreshToken);
-      res.redirect(`${frontendUrl}/auth/callback`);
-    } catch {
+      res.redirect(`${frontendUrl}/home`);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Google OAuth callback failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
       res.redirect(`${frontendUrl}/auth/callback?error=google_auth_failed`);
     }
   }
@@ -170,8 +181,11 @@ export class AuthController {
       });
 
       this.setAuthCookies(res, result.accessToken, result.refreshToken);
-      res.redirect(`${frontendUrl}/auth/callback`);
-    } catch {
+      res.redirect(`${frontendUrl}/home`);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Github OAuth callback failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
       res.redirect(`${frontendUrl}/auth/callback?error=github_auth_failed`);
     }
   }

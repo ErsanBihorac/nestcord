@@ -61,19 +61,22 @@ export class GithubAuthService {
       'GITHUB_CALLBACK_URL',
     );
 
-    const response = await fetch('https://github.com/login/oauth/acces_token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Accept: 'application/json',
+    const response = await fetch(
+      'https://github.com/login/oauth/access_token',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+        },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: callbackUrl,
+        }),
       },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: callbackUrl,
-      }),
-    });
+    );
 
     if (!response.ok) {
       throw new Error('Failed to exchange GitHub authorization code');

@@ -193,7 +193,7 @@ export class UserService {
     };
   }
 
-  async findByGoogleId(googleId: string): Promise<SafeUser> {
+  async findByGoogleId(googleId: string): Promise<SafeUser | undefined> {
     const user = await this.prismaService.user.findUnique({
       where: {
         googleId: googleId,
@@ -201,16 +201,10 @@ export class UserService {
       select: safeUserSelect,
     });
 
-    if (!user) {
-      throw new NotFoundException(
-        `User with google id ${googleId} was not found`,
-      );
-    }
-
-    return user;
+    return user ?? undefined;
   }
 
-  async findByGithubId(githubId: string): Promise<SafeUser> {
+  async findByGithubId(githubId: string): Promise<SafeUser | undefined> {
     const user = await this.prismaService.user.findUnique({
       where: {
         githubId: githubId,
@@ -218,13 +212,7 @@ export class UserService {
       select: safeUserSelect,
     });
 
-    if (!user) {
-      throw new NotFoundException(
-        `User with github id ${githubId} was not found`,
-      );
-    }
-
-    return user;
+    return user ?? undefined;
   }
 
   async deleteUserById(id: string): Promise<SafeUser> {
